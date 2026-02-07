@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - BillTracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-slate-900 text-slate-200 flex items-center justify-center min-h-screen p-4">
+
+    <div class="bg-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-md border border-slate-700">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-white mb-2"><i class="fa-solid fa-file-invoice-dollar mr-2 text-indigo-500"></i>BillTracker</h1>
+            <p class="text-slate-400">Bitte melde dich an</p>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="bg-red-500/10 border border-red-500 text-red-500 px-4 py-2 rounded mb-4 text-sm text-center">
+                {{ message }}
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <a href="{{ url_for('google_login') }}" class="flex items-center justify-center gap-3 w-full bg-white text-slate-800 font-bold py-3 rounded-xl hover:bg-slate-100 transition mb-6">
+            <img src="https://www.svgrepo.com/show/475656/google-color.svg" class="w-5 h-5" alt="Google">
+            Mit Google anmelden
+        </a>
+
+        <div class="relative flex py-2 items-center mb-6">
+            <div class="flex-grow border-t border-slate-600"></div>
+            <span class="flex-shrink mx-4 text-slate-500 text-xs uppercase">oder klassisch</span>
+            <div class="flex-grow border-t border-slate-600"></div>
+        </div>
+
+        <div class="flex mb-4 bg-slate-700 rounded p-1">
+            <a href="{{ url_for('login') }}" class="flex-1 text-center py-1 rounded text-sm {{ 'bg-slate-600 text-white shadow' if not register_mode else 'text-slate-400' }}">Login</a>
+            <a href="{{ url_for('register') }}" class="flex-1 text-center py-1 rounded text-sm {{ 'bg-slate-600 text-white shadow' if register_mode else 'text-slate-400' }}">Registrieren</a>
+        </div>
+
+        <form method="POST" action="{{ request.path }}">
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">E-Mail</label>
+                    <input type="email" name="email" required class="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 outline-none focus:border-indigo-500 text-white">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Passwort</label>
+                    <input type="password" name="password" required class="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 outline-none focus:border-indigo-500 text-white">
+                </div>
+                <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl shadow-lg hover:bg-indigo-700 transition mt-2">
+                    {{ 'Registrieren' if register_mode else 'Anmelden' }}
+                </button>
+            </div>
+        </form>
+    </div>
+
+</body>
+</html>

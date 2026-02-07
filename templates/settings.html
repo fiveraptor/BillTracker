@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Einstellungen - BillTracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col">
+
+    <nav class="bg-slate-900 text-white p-4 shadow-lg shrink-0 z-50 sticky top-0">
+        <div class="max-w-3xl mx-auto flex items-center gap-4 px-4">
+            <a href="{{ url_for('index') }}" class="text-slate-400 hover:text-white transition p-2 -ml-2">
+                <i class="fa-solid fa-arrow-left text-xl"></i>
+            </a>
+            <h1 class="text-xl font-bold tracking-wider">Einstellungen</h1>
+        </div>
+    </nav>
+
+    <div class="max-w-3xl mx-auto w-full p-4 space-y-6">
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="space-y-2">
+                    {% for category, message in messages %}
+                        <div class="p-4 rounded-lg text-white font-medium shadow-sm {{ 'bg-green-500' if category == 'success' else 'bg-red-500' }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" class="space-y-6">
+            
+            <!-- Benachrichtigungen -->
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
+                <h2 class="text-lg font-bold mb-4 flex items-center gap-2 text-slate-700">
+                    <i class="fa-solid fa-bell text-indigo-500"></i> Benachrichtigungen
+                </h2>
+                <div class="space-y-2">
+                    <label class="block text-sm font-bold text-slate-500 uppercase">Apprise URL</label>
+                    <div class="flex items-center gap-2">
+                        <input type="text" name="notify_url" value="{{ user.notify_url or '' }}" placeholder="z.B. ntfy://ntfy.sh/mein-topic" class="flex-grow bg-slate-50 border border-slate-300 rounded-lg p-3 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition">
+                        <a href="{{ url_for('test_notification') }}" class="bg-slate-200 hover:bg-slate-300 text-slate-600 font-bold py-3 px-4 rounded-lg transition" title="Test-Benachrichtigung senden">
+                            <i class="fa-solid fa-paper-plane"></i>
+                        </a>
+                    </div>
+                    <p class="text-xs text-slate-400">Unterstützt Telegram, Discord, Ntfy, Email uvm. (via Apprise)</p>
+                </div>
+            </div>
+
+            <!-- E-Mail Import -->
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold flex items-center gap-2 text-slate-700">
+                        <i class="fa-solid fa-envelope text-indigo-500"></i> E-Mail Import (IMAP)
+                    </h2>
+                    <a href="{{ url_for('test_imap') }}" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-600 text-xs font-bold py-2 px-3 rounded-lg transition">
+                        <i class="fa-solid fa-plug mr-1"></i> Testen
+                    </a>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-bold text-slate-500 uppercase mb-1">IMAP Server</label>
+                        <input type="text" name="imap_server" value="{{ user.imap_server or '' }}" placeholder="imap.gmail.com" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-3 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-500 uppercase mb-1">Benutzer / E-Mail</label>
+                        <input type="text" name="imap_user" value="{{ user.imap_user or '' }}" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-3 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-500 uppercase mb-1">Passwort</label>
+                        <input type="password" name="imap_password" placeholder="••••••••" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-3 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition">
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg transition">Speichern</button>
+        </form>
+    </div>
+</body>
+</html>

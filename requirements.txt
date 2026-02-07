@@ -1,0 +1,11 @@
+Flask
+Flask-SQLAlchemy
+Flask-Login
+Authlib
+requests
+imap-tools
+apprise
+APScheduler
+python-dateutil
+google-generativeai>=0.7.2
+pypdf

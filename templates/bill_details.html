@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ bill.title }} - Details</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Navbar -->
+    <nav class="bg-slate-900 text-white p-4 shadow-lg shrink-0 z-50 sticky top-0">
+        <div class="max-w-full mx-auto flex items-center gap-4 px-4">
+            <a href="{{ url_for('index') }}" class="text-slate-400 hover:text-white transition p-2 -ml-2">
+                <i class="fa-solid fa-arrow-left text-xl"></i>
+            </a>
+            <h1 class="text-xl font-bold tracking-wider truncate">{{ bill.title }}</h1>
+        </div>
+    </nav>
+
+    <div class="flex-1 flex flex-col md:flex-row relative">
+        
+        <!-- Linke Spalte: Info & Bearbeiten -->
+        <div class="w-full md:w-96 bg-white border-r border-slate-200 flex flex-col shadow-xl z-10 md:sticky md:top-16 md:h-[calc(100vh-4rem)] md:overflow-y-auto">
+            <div class="p-4 md:p-6">
+                
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        <div class="mb-6 space-y-2">
+                            {% for category, message in messages %}
+                                <div class="p-3 rounded text-sm text-white {{ 'bg-green-500' if category == 'success' else 'bg-red-500' }}">
+                                    {{ message }}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+
+                <!-- Mobile: Datei Vorschau Buttons -->
+                <div class="md:hidden mb-6 space-y-3">
+                    {% set files = bill.files if bill.files else [{'filename': bill.filename, 'file_type': bill.file_type}] %}
+                    {% for file in files %}
+                    <a href="{{ url_for('serve_file', filename=file.filename) }}" target="_blank" class="flex items-center justify-center w-full bg-indigo-50 border border-indigo-100 text-indigo-700 font-bold py-3 rounded-lg shadow-sm hover:bg-indigo-100 transition">
+                        {% if file.file_type == 'pdf' %}
+                            <i class="fa-solid fa-file-pdf mr-2"></i> PDF öffnen
+                        {% else %}
+                            <i class="fa-solid fa-image mr-2"></i> Bild öffnen
+                        {% endif %}
+                    </a>
+                    {% endfor %}
+                </div>
+
+                <h2 class="text-lg font-bold mb-4 text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square text-indigo-500"></i> Bearbeiten
+                </h2>
+                
+                <form action="{{ url_for('edit_bill', id=bill.id) }}" method="POST" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Titel</label>
+                        <input type="text" name="title" value="{{ bill.title }}" required
+                               class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Betrag (CHF)</label>
+                        <input type="number" step="0.01" name="amount" value="{{ bill.amount if bill.amount else '' }}"
+                               class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Fälligkeitsdatum</label>
+                        <input type="date" name="due_date" value="{{ bill.due_date if bill.due_date else '' }}"
+                               class="w-full appearance-none bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition">
+                    </div>
+
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg shadow transition flex justify-center items-center gap-2">
+                        <i class="fa-solid fa-save"></i> Speichern
+                    </button>
+                </form>
+
+                {% if bill.status != 'bezahlt' %}
+                <a href="{{ url_for('pay', id=bill.id) }}" class="mt-4 w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-lg shadow transition flex justify-center items-center gap-2">
+                    <i class="fa-solid fa-check"></i> Als erledigt markieren
+                </a>
+                {% endif %}
+
+                <hr class="my-8 border-slate-100">
+
+                <h3 class="text-xs font-bold text-slate-400 uppercase mb-3 tracking-wider">Informationen</h3>
+                <div class="space-y-3 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-slate-500">Status:</span>
+                        <span class="px-2 py-0.5 rounded text-xs font-bold uppercase {{ 'bg-green-100 text-green-700' if bill.status == 'bezahlt' else 'bg-orange-100 text-orange-700' }}">
+                            {{ bill.status }}
+                        </span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-500">Erstellt:</span>
+                        <span class="font-medium">{{ bill.created_at.strftime('%d.%m.%Y') }}</span>
+                    </div>
+                    {% if bill.paid_at %}
+                    <div class="flex justify-between">
+                        <span class="text-slate-500">Bezahlt:</span>
+                        <span class="font-medium">{{ bill.paid_at.strftime('%d.%m.%Y') }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Löschen Button Bereich -->
+                <div class="pt-4">
+                    <a href="{{ url_for('delete_bill', id=bill.id) }}" 
+                       onclick="return confirm('Bist du sicher? Die Rechnung und die Datei werden unwiderruflich gelöscht.');"
+                       class="block w-full text-center text-red-500 hover:text-white hover:bg-red-500 border border-red-200 hover:border-red-500 py-2.5 rounded-lg transition text-sm font-semibold">
+                        <i class="fa-solid fa-trash-can mr-1"></i> Löschen
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rechte Spalte: Vorschau -->
+        <div class="hidden md:block flex-1 bg-slate-200 p-4 md:p-12 space-y-8">
+            {# Fallback für alte Rechnungen ohne BillFile Einträge #}
+            {% set files = bill.files if bill.files else [{'filename': bill.filename, 'file_type': bill.file_type}] %}
+            
+            {% for file in files %}
+                <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+                    {% if file.file_type == 'pdf' %}
+                        <iframe src="{{ url_for('serve_file', filename=file.filename) }}" class="w-full h-[800px] border-none"></iframe>
+                    {% else %}
+                        <img src="{{ url_for('serve_file', filename=file.filename) }}" class="w-full h-auto block">
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+
+    </div>
+</body>
+</html>

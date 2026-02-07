@@ -1,0 +1,25 @@
+services:
+  billtracker:
+    build: .
+    container_name: billtracker
+    restart: unless-stopped
+    ports:
+      - "5010:5000"
+    volumes:
+      - ./data:/app/data
+    environment:
+      # --- ALLGEMEINE KONFIGURATION ---
+      - TZ=Europe/Zurich
+      - FLASK_APP=app.py
+      - PYTHONUNBUFFERED=1
+      # Secrets werden nun sicher aus der .env Datei geladen
+      - SECRET_KEY=${SECRET_KEY}
+      
+      # --- GOOGLE AUTH ---
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      # WICHTIG: Erlaubt HTTP für OAuth (nur lokal/intern sicher, für Public Domain HTTPS nutzen!)
+      - OAUTHLIB_INSECURE_TRANSPORT=1
+
+      # --- AI FEATURES (Google Gemini) ---
+      - GEMINI_API_KEY=${GEMINI_API_KEY}

@@ -1,0 +1,13 @@
+# Python Cache
+__pycache__/
+*.pyc
+
+# Environment Variables (WICHTIG: Enthält Passwörter)
+.env
+
+# Datenbank und Uploads
+data/bills.db
+data/uploads/
+
+# Systemdateien
+.DS_Store

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BillTracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-slate-100 text-slate-800 pb-20">
+
+    <nav class="bg-slate-900 text-white p-4 shadow-lg sticky top-0 z-50">
+        <div class="max-w-3xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <h1 class="text-xl font-bold tracking-wider">BillTracker</h1>
+                <span class="text-xs bg-slate-700 px-2 py-1 rounded hidden sm:inline-block truncate max-w-[150px]">{{ user.email }}</span>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <button onclick="toggleModal()" class="bg-indigo-500 hover:bg-indigo-600 px-3 py-2 rounded-lg text-sm font-bold shadow transition">
+                    <i class="fa-solid fa-plus mr-1"></i> Neu
+                </button>
+                <a href="{{ url_for('stats') }}" class="bg-slate-700 hover:bg-slate-600 px-3 py-2 rounded-lg text-sm transition text-slate-300 hover:text-white" title="Statistik">
+                    <i class="fa-solid fa-chart-simple"></i>
+                </a>
+                <a href="{{ url_for('settings') }}" class="bg-slate-700 hover:bg-slate-600 px-3 py-2 rounded-lg text-sm transition text-slate-300 hover:text-white" title="Einstellungen">
+                    <i class="fa-solid fa-gear"></i>
+                </a>
+                <a href="{{ url_for('logout') }}" class="bg-slate-700 hover:bg-red-600 px-3 py-2 rounded-lg text-sm transition text-slate-300 hover:text-white" title="Logout">
+                    <i class="fa-solid fa-sign-out-alt"></i>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-3xl mx-auto p-4 space-y-6">
+        
+        <div class="space-y-4">
+            <!-- Suchfeld -->
+            <form method="GET" action="{{ url_for('index') }}" class="relative">
+                <i class="fa-solid fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+                <input type="text" name="q" value="{{ search_query or '' }}" placeholder="Rechnungen suchen..." 
+                       class="w-full pl-11 bg-white border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition shadow-sm">
+            </form>
+
+            {% if total_open > 0 %}
+            <div class="bg-indigo-600 rounded-xl p-4 text-white shadow-lg flex justify-between items-center mb-6">
+                <span class="font-medium opacity-90">Offener Gesamtbetrag</span>
+                <span class="text-2xl font-bold">CHF {{ "%.2f"|format(total_open) }}</span>
+            </div>
+            {% endif %}
+
+            {% if not bills_open %}
+                <div class="text-center p-12 opacity-50"><p>Nichts zu tun. 🎉</p></div>
+            {% endif %}
+
+            {% for bill in bills_open %}
+                {% set days = bill.days_left %}
+                {% set border = 'border-slate-300' %}
+                {% set txt = 'text-slate-500' %}
+                {% if days is not none %}
+                    {% if days < 0 %}{% set border = 'border-red-600' %}{% set txt = 'text-red-600 font-bold' %}
+                    {% elif days <= 5 %}{% set border = 'border-orange-400' %}{% set txt = 'text-orange-500 font-bold' %}
+                    {% else %}{% set border = 'border-green-500' %}{% set txt = 'text-green-600' %}
+                    {% endif %}
+                {% endif %}
+
+                <div class="bg-white rounded-xl shadow-sm border-l-[6px] {{ border }} p-4">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="flex-1 pr-2">
+                            <h3 class="font-bold text-lg leading-snug">
+                                <a href="{{ url_for('bill_details', id=bill.id) }}" class="hover:text-indigo-600 hover:underline decoration-2 underline-offset-2 transition-colors">
+                                    {{ bill.title }}
+                                </a>
+                            </h3>
+                            {% if bill.amount %}
+                            <div class="text-sm font-bold text-slate-700 mb-1">
+                                CHF {{ "%.2f"|format(bill.amount) }}
+                            </div>
+                            {% endif %}
+                            <form action="{{ url_for('update_date', id=bill.id) }}" method="POST" class="mt-2 flex items-center gap-2">
+                                <i class="fa-regular fa-calendar {{ txt }}"></i>
+                                <input type="date" name="due_date" onchange="this.form.submit()" 
+                                       value="{{ bill.due_date if bill.due_date else '' }}"
+                                       class="bg-transparent text-sm {{ txt }} focus:outline-none focus:bg-slate-50 rounded cursor-pointer">
+                                {% if days is not none %}
+                                    <span class="text-xs {{ txt }}">
+                                        {% if days < 0 %} ({{ days|abs }} Tage drüber!)
+                                        {% else %} ({{ days }} Tage) {% endif %}
+                                    </span>
+                                {% endif %}
+                            </form>
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <a href="{{ url_for('serve_file', filename=bill.filename) }}" target="_blank" class="bg-slate-100 text-slate-600 p-2.5 rounded-lg hover:bg-slate-200 block text-center min-w-[3rem]">
+                                {% if bill.file_type == 'image' %}
+                                    <i class="fa-solid fa-image text-lg text-indigo-500"></i>
+                                {% else %}
+                                    <i class="fa-solid fa-file-pdf text-lg text-red-500"></i>
+                                {% endif %}
+                            </a>
+                            <a href="{{ url_for('delete_bill', id=bill.id) }}" onclick="return confirm('Löschen?')" class="bg-red-50 text-red-500 p-2.5 rounded-lg hover:bg-red-500 hover:text-white block text-center transition">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('pay', id=bill.id) }}" class="block w-full bg-slate-50 hover:bg-green-50 text-slate-600 hover:text-green-700 text-center py-2.5 rounded-lg font-semibold border border-slate-200 transition text-sm">
+                        <i class="fa-solid fa-check mr-1"></i> Erledigt
+                    </a>
+                </div>
+            {% endfor %}
+        </div>
+
+        {% if bills_paid %}
+        <div class="pt-8 border-t border-slate-200 opacity-60">
+            <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Verlauf</h2>
+            <div class="space-y-2">
+                {% for bill in bills_paid %}
+                <div class="bg-white rounded p-3 flex justify-between items-center shadow-sm">
+                    <div class="flex-1 truncate mr-4">
+                        <a href="{{ url_for('bill_details', id=bill.id) }}" class="text-sm font-medium line-through decoration-slate-400 hover:text-indigo-500 hover:decoration-indigo-300 transition-colors">
+                            {{ bill.title }}
+                        </a>
+                        {% if bill.amount %}
+                        <span class="text-sm text-slate-400 line-through ml-2">CHF {{ "%.2f"|format(bill.amount) }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="flex items-center gap-4 text-slate-400">
+                        <span class="text-xs font-mono">{{ bill.paid_at.strftime('%d.%m.%Y') }}</span>
+                        <a href="{{ url_for('serve_file', filename=bill.filename) }}" target="_blank" class="text-slate-400 px-2">
+                            {% if bill.file_type == 'image' %}
+                                <i class="fa-solid fa-image"></i>
+                            {% else %}
+                                <i class="fa-solid fa-file-pdf"></i>
+                            {% endif %}
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Upload Modal -->
+    <div id="uploadModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4 transition-opacity duration-300">
+        <div class="bg-white w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden relative transform transition-all">
+            
+            <!-- Header -->
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-cloud-arrow-up text-indigo-500"></i> Neue Rechnung
+                </h3>
+                <button onclick="toggleModal()" class="text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-200 transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Content -->
+            <div class="p-6 relative">
+                
+                <!-- Loading Overlay (Hidden by default) -->
+                <div id="loadingState" class="hidden absolute inset-0 bg-white/90 z-10 flex flex-col items-center justify-center text-center p-6">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
+                    <h4 class="text-lg font-bold text-slate-800">Analysiere Rechnung...</h4>
+                    <p class="text-sm text-slate-500 mt-1">Die KI extrahiert Daten für dich.</p>
+                </div>
+
+                <form id="uploadForm" action="{{ url_for('upload') }}" method="POST" enctype="multipart/form-data" class="space-y-5">
+                    
+                    <!-- File Input (Styled) -->
+                    <div class="relative group">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Dokumente</label>
+                        <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 transition group-hover:text-indigo-600">
+                            <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                <i class="fa-solid fa-file-arrow-up text-2xl mb-2 text-slate-400 group-hover:text-indigo-500 transition"></i>
+                                <p class="text-sm text-slate-500 group-hover:text-indigo-600"><span class="font-semibold">Klicken zum Auswählen</span></p>
+                                <p class="text-xs text-slate-400 mt-1">PDF, JPG, PNG</p>
+                            </div>
+                            <input type="file" name="file" accept=".pdf, .jpg, .jpeg, .png" multiple required class="hidden" onchange="updateFileName(this)">
+                        </label>
+                        <div id="fileNameDisplay" class="text-xs text-center mt-2 text-slate-500 font-medium truncate px-2"></div>
+                    </div>
+
+                    <!-- Title Input -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Titel <span class="font-normal text-slate-400 normal-case">(Optional für Auto-Erkennung)</span></label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fa-solid fa-tag text-slate-400"></i>
+                            </div>
+                            <input type="text" name="title" placeholder="z.B. Swisscom Internet" class="w-full pl-10 bg-slate-50 border border-slate-200 rounded-lg p-3 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition">
+                        </div>
+                    </div>
+
+                    <!-- Date Input -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Fälligkeit <span class="font-normal text-slate-400 normal-case">(Optional)</span></label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fa-regular fa-calendar text-slate-400"></i>
+                            </div>
+                            <input type="date" name="due_date" class="w-full pl-10 bg-slate-50 border border-slate-200 rounded-lg p-3 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition appearance-none">
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-indigo-200 transition transform active:scale-[0.98] flex justify-center items-center gap-2">
+                        <i class="fa-solid fa-check"></i> Speichern & Analysieren
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleModal() {
+            const modal = document.getElementById('uploadModal');
+            modal.classList.toggle('hidden');
+        }
+
+        function updateFileName(input) {
+            const display = document.getElementById('fileNameDisplay');
+            if (input.files && input.files.length > 0) {
+                if (input.files.length === 1) {
+                    display.textContent = input.files[0].name;
+                } else {
+                    display.textContent = input.files.length + " Dateien ausgewählt";
+                }
+                display.classList.add('text-indigo-600');
+            } else {
+                display.textContent = "";
+            }
+        }
+
+        document.getElementById('uploadForm').addEventListener('submit', function() {
+            document.getElementById('loadingState').classList.remove('hidden');
+        });
+    </script>
+</body>
+</html>
