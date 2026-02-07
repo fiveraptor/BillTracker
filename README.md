@@ -30,7 +30,13 @@ Ein einfaches Tool zum Verwalten von Rechnungen mit KI-Unterstützung (Google Ge
    python3 -c 'import secrets; print(secrets.token_hex(32))'
    ```
 
-3. Starten:
+3. Daten-Verzeichnis erstellen:
+   Da der Daten-Ordner nicht im Git-Repository enthalten ist, muss er manuell erstellt werden, damit Docker ihn einbinden kann:
+   ```bash
+   mkdir data
+   ```
+
+4. Starten:
    ```bash
    docker-compose up -d --build
    ```
